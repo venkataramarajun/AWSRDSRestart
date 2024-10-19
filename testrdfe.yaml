@@ -1,0 +1,3 @@
+db_name: Bridgeport
+region: Katy
+schedule: "H 0 0 8 * *"
