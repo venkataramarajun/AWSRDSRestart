@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://<username>:<token>@github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL with credentials
+        REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL with credentials
         YAML_DIR = 'AWSRDSRestart'  // Directory where your YAML files are stored in the repo
         JOB_FOLDER = 'AWSRDSRB'  // Folder in Jenkins where the jobs should be created
     }
