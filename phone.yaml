@@ -1,0 +1,3 @@
+db_name: hplaptop
+region: us-west-1c
+schedule: "H 0 0 7 * *"
