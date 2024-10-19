@@ -1,0 +1,3 @@
+db_name: TestDB2
+regions: us-wet-1
+schedule: "H 0 0 15 * *"
