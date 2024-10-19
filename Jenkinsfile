@@ -4,7 +4,6 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL
         JOB_FOLDER = 'AWSRDSRB_final'  // Folder in Jenkins where the jobs should be created
-        JOB_TRACKING_FILE = 'created_jobs.log'  // File to track created jobs
     }
 
     stages {
@@ -62,7 +61,7 @@ pipeline {
                         if (!db_name || !region || !schedule) {
                             echo "Skipping ${yamlFile} due to missing required fields (db_name, region, schedule)."
                         } else {
-                            echo "Creating job for DB: ${db_name}, Region: ${region}, Schedule: ${schedule}"
+                            echo "Creating or Updating job for DB: ${db_name}, Region: ${region}, Schedule: ${schedule}"
 
                             // Create or update the Jenkins job using Job DSL with cron schedule
                             jobDsl scriptText: """
@@ -90,12 +89,11 @@ pipeline {
                                 }
                             }
                             """
-                            jobNamesCreated << "${db_name}-restart-schedule"  // Track created jobs
+                            jobNamesCreated << "${db_name}-restart-schedule"  // Track created or updated jobs
                         }
                     }
 
-                    // Write the created jobs to the tracking file
-                    writeFile file: "${JOB_TRACKING_FILE}", text: jobNamesCreated.join('\n')  // Store created jobs in file
+                    // Set the environment variable with the created job names
                     env.CREATED_JOBS = jobNamesCreated.join(',')
                 }
             }
@@ -104,32 +102,24 @@ pipeline {
         stage('Delete Jobs if YAML Removed') {
             steps {
                 script {
-                    def createdJobs = env.CREATED_JOBS.split(',')  // Get jobs created in this run
+                    // Get jobs created in this run
+                    def createdJobs = env.CREATED_JOBS.split(',')
+                    
+                    // List all existing jobs in the folder
+                    def existingJobs = Jenkins.instance.getItemByFullName("${JOB_FOLDER}").items.collect { it.name }
 
-                    // Check if the job tracking file exists, if not, skip deletion
-                    if (!fileExists("${JOB_TRACKING_FILE}")) {
-                        echo "No previous jobs to compare, skipping job deletion."
-                        return
-                    }
+                    echo "Existing jobs in Jenkins: ${existingJobs}"
+                    echo "Created/Updated jobs in this run: ${createdJobs}"
 
-                    // Read the previous jobs from the log file
-                    def previousJobs = readFile("${JOB_TRACKING_FILE}").split('\n').findAll { it }
-
-                    echo "Previous jobs: ${previousJobs}"
-                    echo "Created jobs in this run: ${createdJobs}"
-
-                    // Jobs to delete are those in the previous list but not in the current run
-                    def jobsToDelete = previousJobs - createdJobs
+                    // Find jobs that are in Jenkins but not in the YAML files (i.e., jobs to delete)
+                    def jobsToDelete = existingJobs - createdJobs
 
                     jobsToDelete.each { jobName ->
                         echo "Deleting job: ${jobName} as it no longer exists in YAML files."
                         try {
                             // Delete the job if it exists in Jenkins
-                            jobDsl removedJobAction: 'DELETE', scriptText: """
-                                pipelineJob('${JOB_FOLDER}/${jobName}') {
-                                    // This job will be deleted
-                                }
-                            """
+                            Jenkins.instance.getItemByFullName("${JOB_FOLDER}/${jobName}")?.delete()
+                            echo "Deleted job: ${jobName}"
                         } catch (Exception e) {
                             echo "Failed to delete job: ${jobName}. It may already be removed."
                         }
