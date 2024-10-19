@@ -1,3 +1,3 @@
-db_name: Testrdsdb
+db_name: Testrdsdb1
 region: us-east-1a
 schedule: "H 0 0 15 * *"  # cron job schedule timing as per requirements
