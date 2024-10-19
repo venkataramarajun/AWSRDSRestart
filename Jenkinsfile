@@ -3,7 +3,7 @@
     
         environment {
             REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL
-            JOB_FOLDER = 'AWSRDSRB'  // Folder in Jenkins where the jobs should be created
+            JOB_FOLDER = 'AWSRDSRB_final'  // Folder in Jenkins where the jobs should be created
             JOB_TRACKING_FILE = 'created_jobs.log'  // File to track created jobs
         }
     
