@@ -2,16 +2,15 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL with credentials
-        YAML_DIR = 'AWSRDSRestart'  // Directory where your YAML files are stored in the repo
+        REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL
         JOB_FOLDER = 'AWSRDSRB'  // Folder in Jenkins where the jobs should be created
     }
 
     stages {
         stage('Checkout YAML Files') {
             steps {
-                // Clone the GitHub repository containing the YAML files with user and token in the URL
-                git url: "${REPO_URL}", branch: 'main'
+                // Clone the GitHub repository containing the YAML files with credentials if needed
+                git url: "${REPO_URL}", branch: 'main', credentialsId: 'your-credentials-id'
             }
         }
 
@@ -25,8 +24,8 @@ pipeline {
                     }
                     """
 
-                    // List all YAML files in the directory
-                    def yamlFiles = sh(script: "ls ${YAML_DIR}/*.yaml", returnStdout: true).trim().split("\n")
+                    // List all YAML files in the root directory (adjust if YAML files are in a subfolder)
+                    def yamlFiles = sh(script: "ls *.yaml", returnStdout: true).trim().split("\n")
 
                     // For each YAML file, read the content and create/update jobs
                     yamlFiles.each { yamlFile ->
