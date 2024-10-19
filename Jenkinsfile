@@ -3,20 +3,50 @@ pipeline {
 
     environment {
         REPO_URL = 'https://github.com/venkataramarajun/AWSRDSRestart.git'  // GitHub repository URL
+        YAML_DIR = 'AWSRDSRestart'  // Directory where your YAML files are stored in the repo
         JOB_FOLDER = 'AWSRDSRB'  // Folder in Jenkins where the jobs should be created
     }
 
     stages {
         stage('Checkout YAML Files') {
             steps {
-                // Clone the GitHub repository containing the YAML files with credentials if needed
-                git url: "${REPO_URL}", branch: 'main', credentialsId: 'your-credentials-id'
+                echo 'Checking out the repository...'
+                // Clone the GitHub repository containing the YAML files
+                git url: "${REPO_URL}", branch: 'main'
+            }
+        }
+
+        stage('Verify Workspace') {
+            steps {
+                echo 'Listing workspace contents...'
+                // List the files in the workspace to ensure the files are there
+                sh 'ls -la'
+            }
+        }
+
+        stage('Verify YAML Files') {
+            steps {
+                script {
+                    echo 'Looking for YAML files...'
+                    // Check the YAML files in the workspace
+                    def yamlFilesOutput = sh(script: "ls *.yaml || echo 'No YAML files found'", returnStdout: true).trim()
+                    echo "YAML files found: ${yamlFilesOutput}"
+
+                    def yamlFiles = yamlFilesOutput.split("\n").findAll { it.endsWith('.yaml') }
+
+                    if (yamlFiles.isEmpty()) {
+                        error("No YAML files found to process.")
+                    } else {
+                        echo "Processing YAML files: ${yamlFiles}"
+                    }
+                }
             }
         }
 
         stage('Create Folder and Process YAML Files') {
             steps {
                 script {
+                    echo 'Creating job folder...'
                     // Create folder if it doesn't exist
                     jobDsl scriptText: """
                     folder('${JOB_FOLDER}') {
@@ -24,17 +54,15 @@ pipeline {
                     }
                     """
 
-                    // List all YAML files in the root directory (adjust if YAML files are in a subfolder)
-                    def yamlFiles = sh(script: "ls *.yaml", returnStdout: true).trim().split("\n")
-
                     // For each YAML file, read the content and create/update jobs
                     yamlFiles.each { yamlFile ->
+                        echo "Processing ${yamlFile}..."
                         def yamlContent = readYaml file: "${yamlFile}"
                         def db_name = yamlContent.db_name
                         def region = yamlContent.region
                         def schedule = yamlContent.schedule
 
-                        echo "Processing job for DB: ${db_name}, Region: ${region}, Schedule: ${schedule}"
+                        echo "Creating job for DB: ${db_name}, Region: ${region}, Schedule: ${schedule}"
 
                         // Create or update the Jenkins job using Job DSL
                         jobDsl scriptText: """
