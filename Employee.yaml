@@ -1,0 +1,3 @@
+db_name: Employeedb
+region: us-west-1a
+schedule: "H 0 0 8 * *"
