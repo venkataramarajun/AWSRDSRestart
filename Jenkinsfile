@@ -66,29 +66,29 @@
     
                                 // Create or update the Jenkins job using Job DSL with cron schedule
                                 jobDsl scriptText: """
-                                pipelineJob('${JOB_FOLDER}/${db_name}-restart-schedule') {
-                                    description('Job to restart RDS DB: ${db_name}')
-                                    triggers {
-                                        cron('${schedule}')  // Set the cron schedule from YAML
-                                    }
-                                    definition {
-                                        cps {
-                                            script('''
-                                                pipeline {
-                                                    agent any
-                                                    stages {
-                                                        stage('Restart RDS DB') {
-                                                            steps {
-                                                                echo "Restarting RDS DB: ${db_name} in region: ${region}"
-                                                                bat "ansible-playbook /path/to/playbook/restart_rds.yml -e db_name=${db_name} -e region=${region}"
+                                pipelineJob('${jobName}') {
+                                        description('A scheduled job to run a script.')
+                                        triggers {
+                                            cron('${schedule}')  // Set the cron schedule
+                                        }
+                                        definition {
+                                            cps {
+                                                script('''
+                                                    pipeline {
+                                                        agent any
+                                                        stages {
+                                                            stage('Run Script') {
+                                                                steps {
+                                                                    echo "Running the scheduled job..."
+                                                                    sh "${command}"
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                }
-                                            ''')
+                                                ''')
+                                            }
                                         }
                                     }
-                                }
                                 """
                                 jobNamesCreated << "${db_name}-restart-schedule"  // Track created jobs
                             }
